@@ -1,5 +1,4 @@
 import struct
-import sys
 import os
 
 
@@ -120,7 +119,7 @@ def main_menu():
             print(">>> เรียกฟังก์ชัน 'สร้างไฟล์รายงาน' <<<")
         elif choice == '0':
             print("ออกจากโปรแกรม...")
-            sys.exit()
+            break
         else:
             print("ตัวเลือกไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง")
 
