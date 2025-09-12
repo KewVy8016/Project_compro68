@@ -1,6 +1,6 @@
 import struct
 import os
-
+from module import def_CRUD_course
 
 def student_menu():
     """เมนูย่อยสำหรับจัดการข้อมูลนักเรียน (CRUD)"""
@@ -45,16 +45,16 @@ def course_menu():
         choice = input("กรุณาเลือกเมนู: ")
         
         if choice == '1':
-            # add_course()
+            def_CRUD_course.add_course()
             print(">>> เรียกฟังก์ชัน 'เพิ่มรายวิชา' <<<")
         elif choice == '2':
-            # view_courses()
+            def_CRUD_course.view_courses()
             print(">>> เรียกฟังก์ชัน 'ดูรายวิชาทั้งหมด' <<<")
         elif choice == '3':
-            # update_course()
+            def_CRUD_course.update_course()
             print(">>> เรียกฟังก์ชัน 'แก้ไขรายวิชา' <<<")
         elif choice == '4':
-            # delete_course()
+            def_CRUD_course.delete_course()
             print(">>> เรียกฟังก์ชัน 'ลบรายวิชา' <<<")
         elif choice == '0':
             print("ย้อนกลับสู่เมนูหลัก...")

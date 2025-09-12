@@ -1,4 +1,4 @@
-import def_CRUD_coures
+import def_CRUD_course
 def main_menu():
     """แสดงเมนูหลักและรับตัวเลือกจากผู้ใช้"""
     while True:
@@ -11,15 +11,17 @@ def main_menu():
             choice = input("กรุณาเลือกเมนู (1-5): ")
                 
             if choice == '1':
-                def_CRUD_coures.add_course()
+                def_CRUD_course.add_course()
             elif choice == '2':
-                def_CRUD_coures.view_courses()
+                def_CRUD_course.view_courses()
             elif choice == '3':
-                def_CRUD_coures.update_course()
+                def_CRUD_course.update_course()
             elif choice == '4':
-                def_CRUD_coures.delete_course()
+                def_CRUD_course.delete_course()
             elif choice == '5':
                 print("ย้อนกลับสู่เมนูหลัก...")
                 break
             else:
                 print("ตัวเลือกไม่ถูกต้อง กรุณาลองอีกครั้ง")
+if __name__ == "__main__":
+    main_menu()
