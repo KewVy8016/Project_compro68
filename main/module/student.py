@@ -160,7 +160,7 @@ def update_student():
                 except ValueError:
                     print("ชั้นปีไม่ถูกต้อง ใช้ค่าเดิม")
 
-            new_status = input(f"ป้อนสถานะใหม่ (1=Active, 0=Inactive) (Enter เพื่อใช้ค่าเดิม): ")
+            new_status = input(f"ป้อนสถานะใหม่ (1=กำลังศึกษา, 0=ไม่ได้ศึกษาเเล้ว) (Enter เพื่อใช้ค่าเดิม): ")
             if new_status:
                 try:
                     student['status'] = int(new_status)
