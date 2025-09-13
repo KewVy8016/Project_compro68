@@ -1,7 +1,7 @@
 import struct
 import os
-from module import def_CRUD_course
 from module.student import *
+from module.register import *
 
 def course_menu():
     """เมนูย่อยสำหรับจัดการข้อมูลรายวิชา (CRUD)"""
@@ -33,35 +33,6 @@ def course_menu():
         else:
             print("ตัวเลือกไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง")
 
-def registration_menu():
-    """เมนูย่อยสำหรับจัดการข้อมูลการลงทะเบียน (CRUD)"""
-    while True:
-        print("\n===== ระบบจัดการข้อมูลการลงทะเบียน =====")
-        print("1. เพิ่มข้อมูลการลงทะเบียน")
-        print("2. ดูข้อมูลการลงทะเบียนทั้งหมด")
-        print("3. แก้ไขข้อมูลการลงทะเบียน")
-        print("4. ลบข้อมูลการลงทะเบียน")
-        print("0. กลับสู่เมนูหลัก")
-        
-        choice = input("กรุณาเลือกเมนู: ")
-        
-        if choice == '1':
-            # add_registration()
-            print(">>> เรียกฟังก์ชัน 'เพิ่มข้อมูลการลงทะเบียน' <<<")
-        elif choice == '2':
-            # view_registrations()
-            print(">>> เรียกฟังก์ชัน 'ดูข้อมูลการลงทะเบียนทั้งหมด' <<<")
-        elif choice == '3':
-            # update_registration()
-            print(">>> เรียกฟังก์ชัน 'แก้ไขข้อมูลการลงทะเบียน' <<<")
-        elif choice == '4':
-            # delete_registration()
-            print(">>> เรียกฟังก์ชัน 'ลบข้อมูลการลงทะเบียน' <<<")
-        elif choice == '0':
-            print("ย้อนกลับสู่เมนูหลัก...")
-            break
-        else:
-            print("ตัวเลือกไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง")
 
 
 
