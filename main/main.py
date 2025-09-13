@@ -2,6 +2,8 @@ import struct
 import os
 from module.student import *
 from module.register import *
+from module.course import *
+
 
 
 
