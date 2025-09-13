@@ -202,7 +202,7 @@ def delete_course():
     else:
         print("ไม่พบรหัสวิชาที่ต้องการลบ")
 
-def main_menu():
+def course_menu():
     """แสดงเมนูหลักและรับตัวเลือกจากผู้ใช้"""
     while True:
             print("\n--- เมนูจัดการรายวิชา ---")
@@ -226,5 +226,4 @@ def main_menu():
                 break
             else:
                 print("ตัวเลือกไม่ถูกต้อง กรุณาลองอีกครั้ง")
-if __name__ == "__main__":
-    main_menu()
+
