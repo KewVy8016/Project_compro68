@@ -3,7 +3,7 @@ import os
 from module.student import *
 from module.register import *
 from module.course import *
-
+from module.report import *
 
 
 
@@ -30,8 +30,7 @@ def main_menu():
         elif choice == '3':
             registration_menu()
         elif choice == '4':
-            # generate_report()
-            print(">>> เรียกฟังก์ชัน 'สร้างไฟล์รายงาน' <<<")
+            generate_report()
         elif choice == '0':
             print("ออกจากโปรแกรม...")
             break
