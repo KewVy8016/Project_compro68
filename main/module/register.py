@@ -2,7 +2,6 @@ import struct
 import os
 from datetime import datetime
 
-
 # กำหนดพาธของไฟล์ฐานข้อมูล
 current_dir = os.path.dirname(os.path.abspath(__file__))
 main_dir = os.path.dirname(current_dir)
@@ -42,16 +41,16 @@ def read_registration_record(record_data):
         register_id = unpacked_data[0]
         student_id = unpacked_data[1].strip(b'\x00').decode('utf-8')
         course_id = unpacked_data[2].strip(b'\x00').decode('utf-8')
-        registration_date = datetime.fromtimestamp(unpacked_data[3])  # ถูกต้องแล้ว
-        status = unpacked_data[4]
+        registration_date = datetime.fromtimestamp(unpacked_data[3])
+        status = 'Registered' if unpacked_data[4] == 1 else 'Dropped'
         return {
-            'register_id': register_id,
-            'student_id': student_id,
-            'course_id': course_id,
-            'registration_date': registration_date,
-            'status': status
+            'ID': register_id,
+            'STUDENT ID': student_id,
+            'COURSE ID': course_id,
+            'REGISTRATION DATE': registration_date,
+            'STATUS': status
         }
-    except struct.error as e:
+    except (struct.error, ValueError) as e:
         print(f"เกิดข้อผิดพลาดในการอันแพ็คข้อมูล: {e}")
         return None
 
@@ -74,7 +73,9 @@ def read_all_records_from_file(file_path=REGISTRATION_FILE_PATH):
                 record_data = f.read(REGISTRATION_RECORD_SIZE)
                 if not record_data:
                     break
-                records.append(read_registration_record(record_data))
+                record = read_registration_record(record_data)
+                if record:
+                    records.append(record)
     except IOError as e:
         print(f"เกิดข้อผิดพลาดในการอ่านไฟล์: {e}")
     return records
@@ -87,13 +88,13 @@ def get_next_register_id():
     valid_records = [r for r in records if r is not None]
     if not valid_records:
         return 1
-    return max(r['register_id'] for r in valid_records) + 1
+    return max(r['ID'] for r in valid_records) + 1
 
 def read_student_by_id(student_id):
-    """อ่านข้อมูลนักเรียนจาก StudentData.bin โดยใช้รหัสนักเรียน"""
+    """อ่านข้อมูลนักเรียนจาก student.bin โดยใช้รหัสนักเรียน"""
     try:
         if not os.path.exists(STUDENT_FILE_PATH):
-            print("ไม่พบไฟล์ StudentData.bin")
+            print("ไม่พบไฟล์ student.bin")
             return None
             
         with open(STUDENT_FILE_PATH, 'rb') as f:
@@ -159,28 +160,64 @@ def get_student_info_for_registration():
         print("ยกเลิกการเลือกนักเรียน")
         return None
 
+def print_registration_report(records, title="รายงานการลงทะเบียน"):
+    """แสดงรายงานการลงทะเบียนในรูปแบบตาราง"""
+    report = ""
+    report += "==========================================================================\n"
+    report += f"                          {title}\n"
+    report += "==========================================================================\n"
+
+    headers = ["ID", "STUDENT ID", "COURSE ID", "REGISTRATION DATE", "STATUS"]
+    col_widths = [8, 20, 20, 25, 15]
+
+    header_line = " | ".join(f"{h:<{col_widths[i]}}" for i, h in enumerate(headers))
+    report += header_line + "\n"
+    report += "-" * len(header_line) + "\n"
+
+    for reg in records:
+        try:
+            date_str = reg['REGISTRATION DATE'].strftime('%Y-%m-%d %H:%M:%S')
+        except Exception:
+            date_str = "Invalid Date"
+        
+        row_data = [
+            str(reg['ID']),
+            reg['STUDENT ID'],
+            reg['COURSE ID'],
+            date_str,
+            reg['STATUS']
+        ]
+        # ตัดข้อความหากยาวเกิน
+        for i in range(len(row_data)):
+            if len(row_data[i]) > col_widths[i]:
+                row_data[i] = row_data[i][:col_widths[i]-3] + "..."
+        row_line = " | ".join(f"{row_data[i]:<{col_widths[i]}}" for i in range(len(headers)))
+        report += row_line + "\n"
+
+    report += "--------------------------------------------------------------------------\n"
+    print(report)
+
 def add_registration():
     """เพิ่มข้อมูลการลงทะเบียนใหม่"""
     student = get_student_info_for_registration()
     if not student:
         return
     
-    register_id = get_next_register_id()
     course_id = input("ป้อนรหัสวิชา: ").strip()
     if not course_id:
         print("รหัสวิชาว่าง กรุณาลองใหม่")
         return
     
     try:
-        status = int(input("ป้อนสถานะ (1 = ลงทะเบียนแล้ว, 0 = ยกเลิก): "))
+        status = int(input("ป้อนสถานะ (1 = Registered, 0 = Dropped): "))
         if status not in (0, 1):
             raise ValueError
     except ValueError:
         print("❌ สถานะไม่ถูกต้อง กรุณาป้อนเป็นตัวเลข 0 หรือ 1")
         return
         
-    # ✅ แก้ไขตรงนี้
-    registration_date = datetime.now().timestamp()  # ใช้ datetime.now() โดยตรง
+    register_id = get_next_register_id()
+    registration_date = datetime.now().timestamp()
     
     record = create_registration_record(
         register_id,
@@ -199,62 +236,64 @@ def view_registrations():
     if not registrations:
         print("ไม่พบข้อมูลการลงทะเบียนในระบบ")
         return
+    print_registration_report(registrations, title="รายงานการลงทะเบียน")
+
+def view_single_registration():
+    """แสดงข้อมูลการลงทะเบียนรายการเดียวตามรหัส ID"""
+    try:
+        reg_id = int(input("ป้อนรหัส ID การลงทะเบียนที่ต้องการดู: "))
+    except ValueError:
+        print("รหัส ID ไม่ถูกต้อง กรุณาป้อนเป็นตัวเลข")
+        return
     
-    status_map = {1: 'Registered', 0: 'Dropped'}
+    registrations = read_all_records_from_file()
+    filtered_registrations = [r for r in registrations if r and r['ID'] == reg_id]
+    
+    if not filtered_registrations:
+        print("ไม่พบรหัส ID การลงทะเบียนที่ต้องการดู")
+        return
+    
+    print_registration_report(filtered_registrations, title="รายงานการลงทะเบียนรายการเดียว")
 
-    # คำนวณความกว้างที่เหมาะสมจากข้อมูลจริง
-    max_id_len = max(len(str(reg['register_id'])) for reg in registrations if reg) if registrations else 2
-    max_student_len = max(len(reg['student_id']) for reg in registrations if reg) if registrations else 12
-    max_course_len = max(len(reg['course_id']) for reg in registrations if reg) if registrations else 8
-    max_date_len = 19  # ความยาวของ 'YYYY-MM-DD HH:MM:SS'
-    max_status_len = max(len(status_map.get(reg['status'], 'N/A')) for reg in registrations if reg) if registrations else 9
-
-    # ตั้งค่าความกว้างขั้นต่ำ
-    col_widths = [
-        max(5, max_id_len + 2),
-        max(20, max_student_len + 2),
-        max(20, max_course_len + 2),
-        max(25, max_date_len + 2),
-        max(15, max_status_len + 2)
-    ]
-
-    headers = ["ID", "รหัสนักเรียน", "รหัสวิชา", "วันลงทะเบียน", "สถานะ"]
-
-    def separator():
-        line = "+"
-        for w in col_widths:
-            line += "-" * (w) + "+"
-        return line
-
-    def format_row(row_data):
-        row = "|"
-        for i, item in enumerate(row_data):
-            display_text = str(item)
-            row += " " + display_text.ljust(col_widths[i] - 2) + " |"
-        return row
-
-    print("\n--- รายการการลงทะเบียนทั้งหมด ---")
-    print(separator())
-    print(format_row(headers))
-    print(separator())
-
-    for reg in registrations:
-        if reg:
-            status_text = status_map.get(reg['status'], 'N/A')
-            try:
-                date_str = reg['registration_date'].strftime('%Y-%m-%d %H:%M:%S')
-            except Exception:
-                date_str = "Invalid Date"
-
-            row_data = [
-                reg['register_id'],
-                reg['student_id'],
-                reg['course_id'],
-                date_str,
-                status_text
-            ]
-            print(format_row(row_data))
-            print(separator())
+def view_filtered_registrations():
+    """แสดงข้อมูลการลงทะเบียนที่กรองตามเงื่อนไข"""
+    print("\n--- ตัวเลือกการกรอง ---")
+    print("1. กรองตามรหัสนักเรียน")
+    print("2. กรองตามรหัสวิชา")
+    print("3. กรองตามสถานะ (Registered)")
+    print("4. กลับไปเมนูหลัก")
+    filter_choice = input("กรุณาเลือกการกรอง (1-4): ")
+    
+    registrations = read_all_records_from_file()
+    if not registrations:
+        print("ไม่พบข้อมูลการลงทะเบียนในระบบ")
+        return
+    
+    filtered_registrations = []
+    
+    if filter_choice == '1':
+        student_id = input("ป้อนรหัสนักเรียนที่ต้องการกรอง: ").strip()
+        filtered_registrations = [r for r in registrations if r and r['STUDENT ID'] == student_id]
+    
+    elif filter_choice == '2':
+        course_id = input("ป้อนรหัสวิชาที่ต้องการกรอง: ").strip()
+        filtered_registrations = [r for r in registrations if r and r['COURSE ID'] == course_id]
+    
+    elif filter_choice == '3':
+        filtered_registrations = [r for r in registrations if r and r['STATUS'] == 'Registered']
+    
+    elif filter_choice == '4':
+        return
+    
+    else:
+        print("ตัวเลือกไม่ถูกต้อง")
+        return
+    
+    if not filtered_registrations:
+        print("ไม่พบข้อมูลที่ตรงตามเงื่อนไขการกรอง")
+        return
+    
+    print_registration_report(filtered_registrations, title=f"รายงานการลงทะเบียนที่กรอง ({len(filtered_registrations)} รายการ)")
 
 def update_registration():
     """แก้ไขข้อมูลการลงทะเบียน"""
@@ -269,15 +308,16 @@ def update_registration():
     new_records = []
 
     for reg in registrations:
-        if reg and reg['register_id'] == reg_id_to_update:
+        if reg and reg['ID'] == reg_id_to_update:
             found = True
             print("==========================================")
             print("    พบข้อมูลการลงทะเบียนที่ต้องการแก้ไข")
             print("==========================================")
-            print(f"ID การลงทะเบียน: {reg['register_id']}")
-            print(f"รหัสนักเรียน: {reg['student_id']}")
-            print(f"รหัสวิชา: {reg['course_id']}")
-            print(f"สถานะปัจจุบัน: {'Registered' if reg['status'] == 1 else 'Dropped'}")
+            print(f"ID การลงทะเบียน: {reg['ID']}")
+            print(f"รหัสนักเรียน: {reg['STUDENT ID']}")
+            print(f"รหัสวิชา: {reg['COURSE ID']}")
+            print(f"วันลงทะเบียน: {reg['REGISTRATION DATE'].strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"สถานะ: {reg['STATUS']}")
             print("==========================================")
 
             new_status = input("ป้อนสถานะใหม่ (1=Registered, 0=Dropped) (Enter เพื่อใช้ค่าเดิม): ")
@@ -286,18 +326,17 @@ def update_registration():
                     new_status = int(new_status)
                     if new_status not in [0, 1]:
                         raise ValueError
-                    reg['status'] = new_status
+                    reg['STATUS'] = 'Registered' if new_status == 1 else 'Dropped'
                 except ValueError:
                     print("สถานะไม่ถูกต้อง ใช้ค่าเดิม")
         
         if reg:
-            # ✅ ถูกต้องแล้ว (ถ้า reg['registration_date'] เป็น datetime object)
             updated_record = create_registration_record(
-                reg['register_id'],
-                reg['student_id'],
-                reg['course_id'],
-                reg['registration_date'].timestamp(),  # ใช้ timestamp() จาก datetime object
-                reg['status']
+                reg['ID'],
+                reg['STUDENT ID'],
+                reg['COURSE ID'],
+                reg['REGISTRATION DATE'].timestamp(),
+                1 if reg['STATUS'] == 'Registered' else 0
             )
             if updated_record:
                 new_records.append(updated_record)
@@ -327,7 +366,7 @@ def delete_registration():
     remaining_records = []
 
     for reg in registrations:
-        if reg and reg['register_id'] == reg_id_to_delete:
+        if reg and reg['ID'] == reg_id_to_delete:
             found = True
             print("ลบข้อมูลการลงทะเบียนสำเร็จ!")
         elif reg:
@@ -339,11 +378,11 @@ def delete_registration():
                 os.remove(REGISTRATION_FILE_PATH)
             for reg in remaining_records:
                 record = create_registration_record(
-                    reg['register_id'],
-                    reg['student_id'],
-                    reg['course_id'],
-                    reg['registration_date'].timestamp(),
-                    reg['status']
+                    reg['ID'],
+                    reg['STUDENT ID'],
+                    reg['COURSE ID'],
+                    reg['REGISTRATION DATE'].timestamp(),
+                    1 if reg['STATUS'] == 'Registered' else 0
                 )
                 if record:
                     write_record_to_file(record)
@@ -358,8 +397,10 @@ def registration_menu():
         print("\n===== ระบบจัดการข้อมูลการลงทะเบียน =====")
         print("1. เพิ่มข้อมูลการลงทะเบียน")
         print("2. ดูข้อมูลการลงทะเบียนทั้งหมด")
-        print("3. แก้ไขข้อมูลการลงทะเบียน")
-        print("4. ลบข้อมูลการลงทะเบียน")
+        print("3. ดูข้อมูลการลงทะเบียนรายการเดียว")
+        print("4. ดูข้อมูลการลงทะเบียนแบบกรอง")
+        print("5. แก้ไขข้อมูลการลงทะเบียน")
+        print("6. ลบข้อมูลการลงทะเบียน")
         print("0. กลับสู่เมนูหลัก")
         
         choice = input("กรุณาเลือกเมนู: ")
@@ -369,11 +410,18 @@ def registration_menu():
         elif choice == '2':
             view_registrations()
         elif choice == '3':
-            update_registration()
+            view_single_registration()
         elif choice == '4':
+            view_filtered_registrations()
+        elif choice == '5':
+            update_registration()
+        elif choice == '6':
             delete_registration()
         elif choice == '0':
             print("ย้อนกลับสู่เมนูหลัก...")
             break
         else:
             print("ตัวเลือกไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง")
+
+if __name__ == "__main__":
+    registration_menu()

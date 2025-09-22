@@ -10,6 +10,7 @@ main_dir = os.path.dirname(current_dir)
 COURSE_FILE_PATH = os.path.join(main_dir, COURSE_FILE_NAME)
 
 def create_course_record(course_id, course_name, credit, academic_year, semester, is_active):
+    """สร้างบันทึกข้อมูลรายวิชาในรูปแบบไบนารี"""
     packed_course_id = course_id.encode('utf-8')[:10].ljust(10, b'\x00')
     packed_course_name = course_name.encode('utf-8')[:50].ljust(50, b'\x00')
     try:
@@ -26,105 +27,184 @@ def create_course_record(course_id, course_name, credit, academic_year, semester
     except struct.error as e:
         print(f"เกิดข้อผิดพลาดในการแพ็คข้อมูล: {e}")
         return None
-    
+
 def read_course_record(record_data):
+    """อ่านบันทึกข้อมูลรายวิชาจากรูปแบบไบนารี"""
     try:
         unpacked_data = struct.unpack(COURSE_RECORD_FORMAT, record_data)
         course_id = unpacked_data[0].strip(b'\x00').decode('utf-8')
         course_name = unpacked_data[1].strip(b'\x00').decode('utf-8')
         return {
-            'course_id': course_id,
-            'course_name': course_name,
-            'credit': unpacked_data[2],
-            'academic_year': unpacked_data[3],
-            'semester': unpacked_data[4],
-            'is_active': unpacked_data[5]
+            'COURSE ID': course_id,
+            'COURSE NAME': course_name,
+            'CREDIT': unpacked_data[2],
+            'ACADEMIC YEAR': unpacked_data[3],
+            'SEMESTER': unpacked_data[4],
+            'STATUS': 'Active' if unpacked_data[5] == 1 else 'Inactive'
         }
     except struct.error as e:
         print(f"เกิดข้อผิดพลาดในการอันแพ็คข้อมูล: {e}")
         return None
 
 def write_record_to_file(record, file_path=COURSE_FILE_PATH):
-    with open(file_path, 'ab') as f:
-        f.write(record)
+    """เขียนบันทึกข้อมูลลงในไฟล์ไบนารี"""
+    try:
+        with open(file_path, 'ab') as f:
+            f.write(record)
+    except IOError as e:
+        print(f"เกิดข้อผิดพลาดในการเขียนไฟล์: {e}")
 
 def read_all_records_from_file(file_path=COURSE_FILE_PATH):
+    """อ่านบันทึกข้อมูลทั้งหมดจากไฟล์ไบนารี"""
     records = []
-    if not os.path.exists(file_path):
-        return records
-    with open(file_path, 'rb') as f:
-        while True:
-            record_data = f.read(COURSE_RECORD_SIZE)
-            if not record_data:
-                break
-            records.append(read_course_record(record_data))
+    try:
+        if not os.path.exists(file_path):
+            return records
+        with open(file_path, 'rb') as f:
+            while True:
+                record_data = f.read(COURSE_RECORD_SIZE)
+                if not record_data:
+                    break
+                record = read_course_record(record_data)
+                if record:
+                    records.append(record)
+    except IOError as e:
+        print(f"เกิดข้อผิดพลาดในการอ่านไฟล์: {e}")
     return records
-   
-# --- ฟังก์ชัน CRUD หลักที่ใช้ในเมนู ---
+
+def print_course_report(records, title="รายงานรายวิชา"):
+    """แสดงรายงานรายวิชาในรูปแบบตาราง"""
+    report = ""
+    report += "==========================================================================\n"
+    report += f"                          {title}\n"
+    report += "==========================================================================\n"
+
+    headers = ["COURSE ID", "COURSE NAME", "CREDIT", "ACADEMIC YEAR", "SEMESTER", "STATUS"]
+    col_widths = [20, 20, 20, 15, 8, 15]
+
+    header_line = " | ".join(f"{h:<{col_widths[i]}}" for i, h in enumerate(headers))
+    report += header_line + "\n"
+    report += "-" * len(header_line) + "\n"
+
+    for rec in records:
+        row_data = [str(rec[h]) for h in headers]
+        # ตัดข้อความหากยาวเกิน
+        for i in range(len(row_data)):
+            if len(row_data[i]) > col_widths[i]:
+                row_data[i] = row_data[i][:col_widths[i]-3] + "..."
+        row_line = " | ".join(f"{row_data[i]:<{col_widths[i]}}" for i in range(len(headers)))
+        report += row_line + "\n"
+
+    report += "--------------------------------------------------------------------------\n"
+    print(report)
 
 def add_course():
     """เพิ่มข้อมูลรายวิชาใหม่"""
     course_id = input("ป้อนรหัสวิชา (ไม่เกิน 10 ตัวอักษร): ")
     course_name = input("ป้อนชื่อวิชา (ไม่เกิน 50 ตัวอักษร): ")
-    credit = int(input("ป้อนหน่วยกิต: "))
-    academic_year = int(input("ป้อนปีการศึกษา (เช่น 2568): "))
-    semester = int(input("ป้อนภาคเรียน (1, 2, 3): "))
-    is_active = int(input("สถานะการของวิชา(1 = เปิดสอน 0 = ยกเลิก):"))
+    try:
+        credit = int(input("ป้อนหน่วยกิต: "))
+        academic_year = int(input("ป้อนปีการศึกษา (เช่น 2568): "))
+        semester = int(input("ป้อนภาคเรียน (1, 2, 3): "))
+        is_active = int(input("ป้อนสถานะ (1 = Active, 0 = Inactive): "))
+    except ValueError:
+        print("ข้อมูลที่ป้อนไม่ถูกต้อง กรุณาป้อนเป็นตัวเลข")
+        return
 
     record = create_course_record(course_id, course_name, credit, academic_year, semester, is_active)
     if record:
         write_record_to_file(record)
         print("เพิ่มข้อมูลรายวิชาสำเร็จ!")
 
-def view_courses():
+def view_all_courses():
     """แสดงข้อมูลรายวิชาทั้งหมด"""
     courses = read_all_records_from_file()
     if not courses:
         print("ไม่พบข้อมูลรายวิชาในระบบ")
         return
+    print_course_report(courses, title="รายงานรายวิชา")
+
+def view_single_course():
+    """แสดงข้อมูลรายวิชาเดียวตามรหัสวิชา"""
+    course_id = input("ป้อนรหัสวิชาที่ต้องการดู: ")
+    courses = read_all_records_from_file()
+    found = False
     
-    # กำหนดความกว้างคอลัมน์ (ปรับให้เหมาะสมกับข้อมูล)
-    col_widths = [12, 50, 10, 12, 10, 10]  # ปรับตามความยาวสูงสุด
-    headers = ["รหัสวิชา", "ชื่อวิชา", "หน่วยกิต", "ปีการศึกษา", "ภาคเรียน", "สถานะ"]
-
-    # สร้างเส้นคั่น
-    separator = "+" + "+".join(["-" * (w + 2) for w in col_widths]) + "+"
-
-    # พิมพ์ตาราง
-    print("\n--- รายการวิชาทั้งหมด ---")
-    print(separator)
-    
-    # พิมพ์ header
-    header_row = "|"
-    for i, header in enumerate(headers):
-        header_row += f" {header.center(col_widths[i])} |"
-    print(header_row)
-    print(separator)
-
-    # พิมพ์ข้อมูล
     for course in courses:
-        if course:
-            status_text = "เปิดสอน" if course['is_active'] == 1 else "ยกเลิก"
-            
-            # ตัดข้อความหากยาวเกิน
-            course_id = course['course_id']
-            if len(course_id) > col_widths[0]:
-                course_id = course_id[:col_widths[0]-3] + "..."
-                
-            course_name = course['course_name']
-            if len(course_name) > col_widths[1]:
-                course_name = course_name[:col_widths[1]-3] + "..."
-            
-            row = "|"
-            row += f" {course_id.ljust(col_widths[0])} |"
-            row += f" {course_name.ljust(col_widths[1])} |"
-            row += f" {str(course['credit']).center(col_widths[2])} |"
-            row += f" {str(course['academic_year']).center(col_widths[3])} |"
-            row += f" {str(course['semester']).center(col_widths[4])} |"
-            row += f" {status_text.center(col_widths[5])} |"
-            
-            print(row)
-            print(separator)
+        if course and course['COURSE ID'] == course_id:
+            found = True
+            print("\n==========================================")
+            print("      ข้อมูลรายวิชาที่ค้นหา")
+            print("==========================================")
+            print(f"รหัสวิชา: {course['COURSE ID']}")
+            print(f"ชื่อวิชา: {course['COURSE NAME']}")
+            print(f"หน่วยกิต: {course['CREDIT']}")
+            print(f"ปีการศึกษา: {course['ACADEMIC YEAR']}")
+            print(f"ภาคเรียน: {course['SEMESTER']}")
+            print(f"สถานะ: {course['STATUS']}")
+            print("==========================================")
+            break
+    
+    if not found:
+        print("ไม่พบรหัสวิชาที่ต้องการดู")
+
+def view_filtered_courses():
+    """แสดงข้อมูลรายวิชาที่กรองตามเงื่อนไข"""
+    print("\n--- ตัวเลือกการกรอง ---")
+    print("1. กรองตามปีการศึกษา")
+    print("2. กรองตามภาคเรียน")
+    print("3. กรองตามสถานะ (Active)")
+    print("4. กรองตามปีการศึกษาและภาคเรียน")
+    print("5. กลับไปเมนูหลัก")
+    filter_choice = input("กรุณาเลือกการกรอง (1-5): ")
+    
+    courses = read_all_records_from_file()
+    if not courses:
+        print("ไม่พบข้อมูลรายวิชาในระบบ")
+        return
+    
+    filtered_courses = []
+    
+    if filter_choice == '1':
+        try:
+            year = int(input("ป้อนปีการศึกษาที่ต้องการกรอง: "))
+            filtered_courses = [c for c in courses if c and c['ACADEMIC YEAR'] == year]
+        except ValueError:
+            print("ปีการศึกษาไม่ถูกต้อง")
+            return
+    
+    elif filter_choice == '2':
+        try:
+            sem = int(input("ป้อนภาคเรียนที่ต้องการกรอง (1, 2, 3): "))
+            filtered_courses = [c for c in courses if c and c['SEMESTER'] == sem]
+        except ValueError:
+            print("ภาคเรียนไม่ถูกต้อง")
+            return
+    
+    elif filter_choice == '3':
+        filtered_courses = [c for c in courses if c and c['STATUS'] == 'Active']
+    
+    elif filter_choice == '4':
+        try:
+            year = int(input("ป้อนปีการศึกษาที่ต้องการกรอง: "))
+            sem = int(input("ป้อนภาคเรียนที่ต้องการกรอง (1, 2, 3): "))
+            filtered_courses = [c for c in courses if c and c['ACADEMIC YEAR'] == year and c['SEMESTER'] == sem]
+        except ValueError:
+            print("ข้อมูลกรองไม่ถูกต้อง")
+            return
+    
+    elif filter_choice == '5':
+        return
+    
+    else:
+        print("ตัวเลือกไม่ถูกต้อง")
+        return
+    
+    if not filtered_courses:
+        print("ไม่พบข้อมูลที่ตรงตามเงื่อนไขการกรอง")
+        return
+    
+    print_course_report(filtered_courses, title=f"รายงานรายวิชาที่กรอง ({len(filtered_courses)} รายการ)")
 
 def update_course():
     """แก้ไขข้อมูลรายวิชา"""
@@ -134,80 +214,74 @@ def update_course():
     new_records = []
 
     for course in courses:
-        if course['course_id'] == course_id_to_update:
+        if course and course['COURSE ID'] == course_id_to_update:
             found = True
             print("==========================================")
             print("      พบข้อมูลวิชาที่ต้องการแก้ไข")
             print("==========================================")
-            print(f"รหัสวิชา: {course['course_id']}")
-            print(f"ชื่อวิชา: {course['course_name']}")
-            print(f"หน่วยกิต: {course['credit']}")
-            print(f"ปีการศึกษา: {course['academic_year']}")
-            print(f"ภาคเรียน: {course['semester']}")
-            print(f"สถานะ: {'เปิดสอน' if course['is_active'] == 1 else 'ยกเลิก'}")
+            print(f"รหัสวิชา: {course['COURSE ID']}")
+            print(f"ชื่อวิชา: {course['COURSE NAME']}")
+            print(f"หน่วยกิต: {course['CREDIT']}")
+            print(f"ปีการศึกษา: {course['ACADEMIC YEAR']}")
+            print(f"ภาคเรียน: {course['SEMESTER']}")
+            print(f"สถานะ: {course['STATUS']}")
             print("==========================================")
                         
             new_name = input("ป้อนชื่อวิชาใหม่ (Enter เพื่อใช้ค่าเดิม): ")
             if new_name:
-                course['course_name'] = new_name
+                course['COURSE NAME'] = new_name
             
             new_credit = input("ป้อนหน่วยกิตใหม่ (Enter เพื่อใช้ค่าเดิม): ")
             if new_credit:
                 try:
-                    course['credit'] = int(new_credit)
+                    course['CREDIT'] = int(new_credit)
                 except ValueError:
-                    print("หน่วยกิตไม่ถูกต้อง กรุณาป้อนเป็นตัวเลข ใช้ค่าเดิม")
+                    print("หน่วยกิตไม่ถูกต้อง ใช้ค่าเดิม")
 
             new_academic_year = input("ป้อนปีการศึกษาใหม่ (Enter เพื่อใช้ค่าเดิม): ")
             if new_academic_year:
                 try:
-                    course['academic_year'] = int(new_academic_year)
+                    course['ACADEMIC YEAR'] = int(new_academic_year)
                 except ValueError:
-                    print("ปีการศึกษาไม่ถูกต้อง กรุณาป้อนเป็นตัวเลข ใช้ค่าเดิม")
+                    print("ปีการศึกษาไม่ถูกต้อง ใช้ค่าเดิม")
 
             new_semester = input("ป้อนภาคเรียนใหม่ (Enter เพื่อใช้ค่าเดิม): ")
             if new_semester:
                 try:
-                    course['semester'] = int(new_semester)
+                    course['SEMESTER'] = int(new_semester)
                 except ValueError:
-                    print("ภาคเรียนไม่ถูกต้อง กรุณาป้อนเป็นตัวเลข ใช้ค่าเดิม")
+                    print("ภาคเรียนไม่ถูกต้อง ใช้ค่าเดิม")
 
-            new_active = input("สถานะการของวิชา(1 = เปิดสอน 0 = ยกเลิก) (Enter เพื่อใช้ค่าเดิม): ")
+            new_active = input("ป้อนสถานะใหม่ (1 = Active, 0 = Inactive) (Enter เพื่อใช้ค่าเดิม): ")
             if new_active:
                 try:
                     new_active_int = int(new_active)
                     if new_active_int in [0, 1]:
-                        course['is_active'] = new_active_int
+                        course['STATUS'] = 'Active' if new_active_int == 1 else 'Inactive'
                     else:
-                        print("สถานะไม่ถูกต้อง กรุณาป้อน 1 หรือ 0 เท่านั้น ใช้ค่าเดิม")
+                        print("สถานะไม่ถูกต้อง ใช้ค่าเดิม")
                 except ValueError:
-                    print("สถานะไม่ถูกต้อง กรุณาป้อนเป็นตัวเลข ใช้ค่าเดิม")
+                    print("สถานะไม่ถูกต้อง ใช้ค่าเดิม")
 
-            updated_record = create_course_record(
-                course['course_id'], 
-                course['course_name'], 
-                course['credit'], 
-                course['academic_year'], 
-                course['semester'], 
-                course['is_active']
-            )
+        updated_record = create_course_record(
+            course['COURSE ID'],
+            course['COURSE NAME'],
+            course['CREDIT'],
+            course['ACADEMIC YEAR'],
+            course['SEMESTER'],
+            1 if course['STATUS'] == 'Active' else 0
+        )
+        if updated_record:
             new_records.append(updated_record)
-        else:
-            old_record = create_course_record(
-                course['course_id'], 
-                course['course_name'], 
-                course['credit'], 
-                course['academic_year'], 
-                course['semester'], 
-                course['is_active']
-            )
-            new_records.append(old_record)
-            
+    
     if found:
-        with open(COURSE_FILE_PATH, 'wb') as f:
-            for record in new_records:
-                f.write(record)
-        print("แก้ไขข้อมูลสำเร็จ!")
+        try:
+            with open(COURSE_FILE_PATH, 'wb') as f:
+                for record in new_records:
+                    f.write(record)
+            print("แก้ไขข้อมูลสำเร็จ!")
+        except IOError as e:
+            print(f"เกิดข้อผิดพลาดในการแก้ไขไฟล์: {e}")
     else:
         print("ไม่พบรหัสวิชาที่ต้องการแก้ไข")
 
@@ -216,53 +290,64 @@ def delete_course():
     course_id_to_delete = input("ป้อนรหัสวิชาที่ต้องการลบถาวร: ")
     courses = read_all_records_from_file()
     found = False
-    
     remaining_records = []
     
     for course in courses:
-        if course['course_id'] == course_id_to_delete:
+        if course and course['COURSE ID'] == course_id_to_delete:
             found = True
             print("ลบข้อมูลรายวิชาสำเร็จ!")
         else:
             remaining_records.append(course)
 
     if found:
-        with open(COURSE_FILE_PATH, 'wb') as f:
-            for course in remaining_records:
-                record = create_course_record(
-                    course['course_id'], 
-                    course['course_name'], 
-                    course['credit'], 
-                    course['academic_year'], 
-                    course['semester'], 
-                    course['is_active']
-                )
-                f.write(record)
+        try:
+            with open(COURSE_FILE_PATH, 'wb') as f:
+                for course in remaining_records:
+                    record = create_course_record(
+                        course['COURSE ID'],
+                        course['COURSE NAME'],
+                        course['CREDIT'],
+                        course['ACADEMIC YEAR'],
+                        course['SEMESTER'],
+                        1 if course['STATUS'] == 'Active' else 0
+                    )
+                    if record:
+                        f.write(record)
+        except IOError as e:
+            print(f"เกิดข้อผิดพลาดในการลบไฟล์: {e}")
     else:
         print("ไม่พบรหัสวิชาที่ต้องการลบ")
 
 def course_menu():
     """แสดงเมนูหลักและรับตัวเลือกจากผู้ใช้"""
     while True:
-            print("\n--- เมนูจัดการรายวิชา ---")
-            print("1. เพิ่มข้อมูลรายวิชา")
-            print("2. ดูข้อมูลรายวิชาทั้งหมด")
-            print("3. แก้ไขข้อมูลรายวิชา")
-            print("4. ลบรายวิชา")
-            print("5. ย้อนกลับไปหน้าแรก")
-            choice = input("กรุณาเลือกเมนู (1-5): ")
-                
-            if choice == '1':
-                add_course()
-            elif choice == '2':
-                view_courses()
-            elif choice == '3':
-                update_course()
-            elif choice == '4':
-                delete_course()
-            elif choice == '5':
-                print("ย้อนกลับสู่เมนูหลัก...")
-                break
-            else:
-                print("ตัวเลือกไม่ถูกต้อง กรุณาลองอีกครั้ง")
+        print("\n===== ระบบจัดการรายวิชา =====")
+        print("1. เพิ่มข้อมูลรายวิชา")
+        print("2. ดูข้อมูลรายวิชาทั้งหมด")
+        print("3. ดูข้อมูลรายวิชารายบุคคล")
+        print("4. ดูข้อมูลรายวิชาแบบกรอง")
+        print("5. แก้ไขข้อมูลรายวิชา")
+        print("6. ลบข้อมูลรายวิชา")
+        print("0. กลับสู่เมนูหลัก")
+        choice = input("กรุณาเลือกเมนู (1-0): ")
+            
+        if choice == '1':
+            add_course()
+        elif choice == '2':
+            view_all_courses()
+        elif choice == '3':
+            view_single_course()
+        elif choice == '4':
+            view_filtered_courses()
+        elif choice == '5':
+            update_course()
+        elif choice == '6':
+            delete_course()
+        elif choice == '0':
+            print("ย้อนกลับสู่เมนูหลัก...")
+            break
+        else:
+            print("ตัวเลือกไม่ถูกต้อง กรุณาลองอีกครั้ง")
 
+if __name__ == "__main__":
+    course_menu()

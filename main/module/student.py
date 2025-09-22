@@ -5,18 +5,11 @@ import os
 STUDENT_FILE_NAME = 'student.bin'
 
 # กำหนดพาธของไฟล์ให้บันทึกในโฟลเดอร์หลัก (main)
-# จาก Project_compro68/main/module ไปที่ Project_compro68/main/student.bin
 current_dir = os.path.dirname(os.path.abspath(__file__))
 main_dir = os.path.dirname(current_dir)
 STUDENT_FILE_PATH = os.path.join(main_dir, STUDENT_FILE_NAME)
 
-# รูปแบบของข้อมูลที่จะจัดเก็บในแต่ละ record ตามตารางที่กำหนด
-# <16s: student_id (string, 16 bytes)
-# 50s: first_name (string, 50 bytes)
-# 50s: last_name (string, 50 bytes)
-# 20s: major (string, 20 bytes)
-# B: year_level (unsigned char, 1 byte)
-# B: status (unsigned char, 1 byte)
+# รูปแบบของข้อมูลที่จะจัดเก็บในแต่ละ record
 STUDENT_RECORD_FORMAT = '<16s50s50s20sB B'
 STUDENT_RECORD_SIZE = struct.calcsize(STUDENT_RECORD_FORMAT)
 
@@ -50,12 +43,12 @@ def read_student_record(record_data):
         last_name = unpacked_data[2].strip(b'\x00').decode('utf-8')
         major = unpacked_data[3].strip(b'\x00').decode('utf-8')
         return {
-            'student_id': student_id,
-            'first_name': first_name,
-            'last_name': last_name,
-            'major': major,
-            'year_level': unpacked_data[4],
-            'status': unpacked_data[5]
+            'STUDENT ID': student_id,
+            'FIRST NAME': first_name,
+            'LAST NAME': last_name,
+            'MAJOR': major,
+            'YEAR': unpacked_data[4],
+            'STATUS': 'Active' if unpacked_data[5] == 1 else 'Inactive'
         }
     except struct.error as e:
         print(f"เกิดข้อผิดพลาดในการอันแพ็คข้อมูล: {e}")
@@ -80,12 +73,38 @@ def read_all_records_from_file(file_path=STUDENT_FILE_PATH):
                 record_data = f.read(STUDENT_RECORD_SIZE)
                 if not record_data:
                     break
-                records.append(read_student_record(record_data))
+                record = read_student_record(record_data)
+                if record:
+                    records.append(record)
     except IOError as e:
         print(f"เกิดข้อผิดพลาดในการอ่านไฟล์: {e}")
     return records
 
-# --- ฟังก์ชัน CRUD หลักที่ใช้ในเมนู ---
+def print_student_report(records, title="รายงานนักศึกษา"):
+    """แสดงรายงานนักศึกษาในรูปแบบตาราง"""
+    report = ""
+    report += "==========================================================================\n"
+    report += f"                          {title}\n"
+    report += "==========================================================================\n"
+
+    headers = ["STUDENT ID", "FIRST NAME", "LAST NAME", "MAJOR", "YEAR", "STATUS"]
+    col_widths = [20, 20, 20, 15, 8, 15]
+
+    header_line = " | ".join(f"{h:<{col_widths[i]}}" for i, h in enumerate(headers))
+    report += header_line + "\n"
+    report += "-" * len(header_line) + "\n"
+
+    for rec in records:
+        row_data = [str(rec[h]) for h in headers]
+        # ตัดข้อความหากยาวเกิน
+        for i in range(len(row_data)):
+            if len(row_data[i]) > col_widths[i]:
+                row_data[i] = row_data[i][:col_widths[i]-3] + "..."
+        row_line = " | ".join(f"{row_data[i]:<{col_widths[i]}}" for i in range(len(headers)))
+        report += row_line + "\n"
+
+    report += "--------------------------------------------------------------------------\n"
+    print(report)
 
 def add_student():
     """เพิ่มข้อมูลนักเรียนใหม่"""
@@ -111,53 +130,68 @@ def view_students():
     if not students:
         print("ไม่พบข้อมูลนักเรียนในระบบ")
         return
-    
-    # กำหนดความกว้างคอลัมน์ (ปรับให้เหมาะสมกับข้อมูล)
-    col_widths = [15, 25, 25, 20, 10, 12]  # ปรับให้รหัสนักเรียนกว้างพอ
-    headers = ["รหัสนักเรียน", "ชื่อจริง", "นามสกุล", "สาขา", "ชั้นปี", "สถานะ"]
+    print_student_report(students, title="รายงานนักศึกษา")
 
-    # สร้างเส้นคั่น
-    separator = "+" + "+".join(["-" * (w + 2) for w in col_widths]) + "+"
+def view_single_student():
+    """แสดงข้อมูลนักเรียนรายบุคคลโดยค้นหาด้วยรหัสนักเรียน"""
+    student_id_to_view = input("ป้อนรหัสนักเรียนที่ต้องการดู: ")
+    students = read_all_records_from_file()
+    found = False
 
-    # พิมพ์ตาราง
-    print("\n--- รายการนักเรียนทั้งหมด ---")
-    print(separator)
-    
-    # พิมพ์ header
-    header_row = "|"
-    for i, header in enumerate(headers):
-        header_row += f" {header.center(col_widths[i])} |"
-    print(header_row)
-    print(separator)
-
-    # พิมพ์ข้อมูล
     for student in students:
-        if student:
-            status_text = "Active" if student['status'] == 1 else "Inactive"
-            
-            # ตัดข้อความหากยาวเกิน
-            first_name = student['first_name']
-            if len(first_name) > col_widths[1]:
-                first_name = first_name[:col_widths[1]-3] + "..."
-                
-            last_name = student['last_name']
-            if len(last_name) > col_widths[2]:
-                last_name = last_name[:col_widths[2]-3] + "..."
-                
-            major = student['major']
-            if len(major) > col_widths[3]:
-                major = major[:col_widths[3]-3] + "..."
-            
-            row = "|"
-            row += f" {student['student_id'].ljust(col_widths[0])} |"
-            row += f" {first_name.ljust(col_widths[1])} |"
-            row += f" {last_name.ljust(col_widths[2])} |"
-            row += f" {major.ljust(col_widths[3])} |"
-            row += f" {str(student['year_level']).center(col_widths[4])} |"
-            row += f" {status_text.center(col_widths[5])} |"
-            print(row)
-            print(separator)
+        if student and student['STUDENT ID'] == student_id_to_view:
+            found = True
+            print("\n--- ข้อมูลนักเรียน ---")
+            print(f"รหัสนักเรียน: {student['STUDENT ID']}")
+            print(f"ชื่อจริง: {student['FIRST NAME']}")
+            print(f"นามสกุล: {student['LAST NAME']}")
+            print(f"สาขาวิชา: {student['MAJOR']}")
+            print(f"ชั้นปี: {student['YEAR']}")
+            print(f"สถานะ: {student['STATUS']}")
+            print("--------------------")
+            break
+
+    if not found:
+        print("ไม่พบรหัสนักเรียนที่ต้องการ")
+
+def view_filtered_students():
+    """แสดงข้อมูลนักเรียนโดยกรองตามเงื่อนไข"""
+    print("\n--- กรองข้อมูลนักเรียน ---")
+    print("เลือกเงื่อนไขการกรอง:")
+    print("1. กรองตามสาขาวิชา")
+    print("2. กรองตามชั้นปี")
+    print("3. กรองตามสถานะ")
+    filter_choice = input("กรุณาเลือก (1-3): ")
+
+    students = read_all_records_from_file()
+    if not students:
+        print("ไม่พบข้อมูลนักเรียนในระบบ")
+        return
+
+    filtered_students = []
     
+    if filter_choice == '1':
+        major_filter = input("ป้อนสาขาวิชาที่ต้องการกรอง: ")
+        filtered_students = [s for s in students if s and s['MAJOR'].lower() == major_filter.lower()]
+    elif filter_choice == '2':
+        try:
+            year_filter = int(input("ป้อนชั้นปีที่ต้องการกรอง (1, 2, 3, 4, ...): "))
+            filtered_students = [s for s in students if s and s['YEAR'] == year_filter]
+        except ValueError:
+            print("กรุณาป้อนชั้นปีเป็นตัวเลข")
+            return
+    elif filter_choice == '3':
+        status_filter = input("ป้อนสถานะที่ต้องการกรอง (Active/Inactive): ")
+        filtered_students = [s for s in students if s and s['STATUS'].lower() == status_filter.lower()]
+    else:
+        print("ตัวเลือกไม่ถูกต้อง")
+        return
+
+    if not filtered_students:
+        print("ไม่พบข้อมูลนักเรียนที่ตรงกับเงื่อนไข")
+        return
+
+    print_student_report(filtered_students, title="รายงานนักศึกษาที่กรอง")
 
 def update_student():
     """แก้ไขข้อมูลนักเรียน"""
@@ -167,53 +201,53 @@ def update_student():
     new_records = []
 
     for student in students:
-        if student and student['student_id'] == student_id_to_update:
+        if student and student['STUDENT ID'] == student_id_to_update:
             found = True
             print("==========================================")
             print("         พบข้อมูลนักเรียนที่ต้องการแก้ไข")
             print("==========================================")
-            print(f"รหัสนักเรียน: {student['student_id']}")
-            print(f"ชื่อจริง: {student['first_name']}")
-            print(f"นามสกุล: {student['last_name']}")
-            print(f"สาขาวิชา: {student['major']}")
-            print(f"ชั้นปี: {student['year_level']}")
-            print(f"สถานะ: {'Active' if student['status'] == 1 else 'Inactive'}")
+            print(f"รหัสนักเรียน: {student['STUDENT ID']}")
+            print(f"ชื่อจริง: {student['FIRST NAME']}")
+            print(f"นามสกุล: {student['LAST NAME']}")
+            print(f"สาขาวิชา: {student['MAJOR']}")
+            print(f"ชั้นปี: {student['YEAR']}")
+            print(f"สถานะ: {student['STATUS']}")
             print("==========================================")
 
             new_first_name = input(f"ป้อนชื่อจริงใหม่ (Enter เพื่อใช้ค่าเดิม): ")
             if new_first_name:
-                student['first_name'] = new_first_name
+                student['FIRST NAME'] = new_first_name
 
             new_last_name = input(f"ป้อนนามสกุลใหม่ (Enter เพื่อใช้ค่าเดิม): ")
             if new_last_name:
-                student['last_name'] = new_last_name
+                student['LAST NAME'] = new_last_name
             
             new_major = input(f"ป้อนสาขาวิชาใหม่ (Enter เพื่อใช้ค่าเดิม): ")
             if new_major:
-                student['major'] = new_major
+                student['MAJOR'] = new_major
 
             new_year_level = input(f"ป้อนชั้นปีใหม่ (Enter เพื่อใช้ค่าเดิม): ")
             if new_year_level:
                 try:
-                    student['year_level'] = int(new_year_level)
+                    student['YEAR'] = int(new_year_level)
                 except ValueError:
                     print("ชั้นปีไม่ถูกต้อง ใช้ค่าเดิม")
 
-            new_status = input(f"ป้อนสถานะใหม่ (1=กำลังศึกษา, 0=ไม่ได้ศึกษาเเล้ว) (Enter เพื่อใช้ค่าเดิม): ")
+            new_status = input(f"ป้อนสถานะใหม่ (1=Active, 0=Inactive) (Enter เพื่อใช้ค่าเดิม): ")
             if new_status:
                 try:
-                    student['status'] = int(new_status)
+                    student['STATUS'] = 'Active' if int(new_status) == 1 else 'Inactive'
                 except ValueError:
                     print("สถานะไม่ถูกต้อง ใช้ค่าเดิม")
 
         if student:
             updated_record = create_student_record(
-                student['student_id'],
-                student['first_name'],
-                student['last_name'],
-                student['major'],
-                student['year_level'],
-                student['status']
+                student['STUDENT ID'],
+                student['FIRST NAME'],
+                student['LAST NAME'],
+                student['MAJOR'],
+                student['YEAR'],
+                1 if student['STATUS'] == 'Active' else 0
             )
             if updated_record:
                 new_records.append(updated_record)
@@ -238,7 +272,7 @@ def delete_student():
     remaining_records = []
 
     for student in students:
-        if student and student['student_id'] == student_id_to_delete:
+        if student and student['STUDENT ID'] == student_id_to_delete:
             found = True
             print("ลบข้อมูลนักเรียนสำเร็จ!")
         elif student:
@@ -249,12 +283,12 @@ def delete_student():
             os.remove(STUDENT_FILE_PATH)
             for student in remaining_records:
                 record = create_student_record(
-                    student['student_id'],
-                    student['first_name'],
-                    student['last_name'],
-                    student['major'],
-                    student['year_level'],
-                    student['status']
+                    student['STUDENT ID'],
+                    student['FIRST NAME'],
+                    student['LAST NAME'],
+                    student['MAJOR'],
+                    student['YEAR'],
+                    1 if student['STATUS'] == 'Active' else 0
                 )
                 if record:
                     write_record_to_file(record)
@@ -269,8 +303,10 @@ def student_menu():
         print("\n===== ระบบจัดการข้อมูลนักเรียน =====")
         print("1. เพิ่มข้อมูลนักเรียน")
         print("2. ดูข้อมูลนักเรียนทั้งหมด")
-        print("3. แก้ไขข้อมูลนักเรียน")
-        print("4. ลบข้อมูลนักเรียน")
+        print("3. ดูข้อมูลนักเรียนรายบุคคล")
+        print("4. ดูข้อมูลนักเรียนแบบกรอง")
+        print("5. แก้ไขข้อมูลนักเรียน")
+        print("6. ลบข้อมูลนักเรียน")
         print("0. กลับสู่เมนูหลัก")
         
         choice = input("กรุณาเลือกเมนู: ")
@@ -280,8 +316,12 @@ def student_menu():
         elif choice == '2':
             view_students()
         elif choice == '3':
-            update_student()
+            view_single_student()
         elif choice == '4':
+            view_filtered_students()
+        elif choice == '5':
+            update_student()
+        elif choice == '6':
             delete_student()
         elif choice == '0':
             print("ย้อนกลับสู่เมนูหลัก...")
@@ -289,4 +329,5 @@ def student_menu():
         else:
             print("ตัวเลือกไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง")
 
-
+if __name__ == "__main__":
+    student_menu()
