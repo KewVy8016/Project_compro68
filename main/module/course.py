@@ -82,10 +82,49 @@ def view_courses():
     if not courses:
         print("ไม่พบข้อมูลรายวิชาในระบบ")
         return
+    
+    # กำหนดความกว้างคอลัมน์ (ปรับให้เหมาะสมกับข้อมูล)
+    col_widths = [12, 50, 10, 12, 10, 10]  # ปรับตามความยาวสูงสุด
+    headers = ["รหัสวิชา", "ชื่อวิชา", "หน่วยกิต", "ปีการศึกษา", "ภาคเรียน", "สถานะ"]
+
+    # สร้างเส้นคั่น
+    separator = "+" + "+".join(["-" * (w + 2) for w in col_widths]) + "+"
+
+    # พิมพ์ตาราง
     print("\n--- รายการวิชาทั้งหมด ---")
+    print(separator)
+    
+    # พิมพ์ header
+    header_row = "|"
+    for i, header in enumerate(headers):
+        header_row += f" {header.center(col_widths[i])} |"
+    print(header_row)
+    print(separator)
+
+    # พิมพ์ข้อมูล
     for course in courses:
-        print(f"รหัส: {course['course_id']:<10} | ชื่อ: {course['course_name']:<50} | หน่วยกิต: {course['credit']:<2} | ปีการศึกษา: {course['academic_year']} | ภาคเรียน: {course['semester']} | สถานะ: {'เปิดสอน' if course['is_active'] == 1 else 'ยกเลิก'}")
-    print("-------------------------")
+        if course:
+            status_text = "เปิดสอน" if course['is_active'] == 1 else "ยกเลิก"
+            
+            # ตัดข้อความหากยาวเกิน
+            course_id = course['course_id']
+            if len(course_id) > col_widths[0]:
+                course_id = course_id[:col_widths[0]-3] + "..."
+                
+            course_name = course['course_name']
+            if len(course_name) > col_widths[1]:
+                course_name = course_name[:col_widths[1]-3] + "..."
+            
+            row = "|"
+            row += f" {course_id.ljust(col_widths[0])} |"
+            row += f" {course_name.ljust(col_widths[1])} |"
+            row += f" {str(course['credit']).center(col_widths[2])} |"
+            row += f" {str(course['academic_year']).center(col_widths[3])} |"
+            row += f" {str(course['semester']).center(col_widths[4])} |"
+            row += f" {status_text.center(col_widths[5])} |"
+            
+            print(row)
+            print(separator)
 
 def update_course():
     """แก้ไขข้อมูลรายวิชา"""

@@ -1,21 +1,42 @@
 import os
 import struct
+import datetime
 
-# กำหนดชื่อไฟล์และพาธ
+# -----------------------------
+# Path และ Format
+# -----------------------------
 STUDENT_FILE_NAME = 'student.bin'
-REPORT_FILE_NAME = 'report.txt'
-current_dir = os.path.dirname(os.path.abspath(__file__))
-main_dir = os.path.dirname(current_dir)
-STUDENT_FILE_PATH = os.path.join(main_dir, STUDENT_FILE_NAME)
-REPORT_FILE_PATH = os.path.join(main_dir, REPORT_FILE_NAME)
+REGISTER_FILE_NAME = 'registration.bin'
+COURSE_FILE_NAME = 'CourseSubject.bin'
 
-# รูปแบบของข้อมูลในไฟล์ไบนารี
-STUDENT_RECORD_FORMAT = '<16s50s50s20sB B'
+current_dir = os.path.dirname(os.path.abspath(__file__))
+main_dir = os.path.dirname(current_dir)   # ขยับไป main/
+STUDENT_FILE_PATH = os.path.join(main_dir, STUDENT_FILE_NAME)
+REGISTER_FILE_PATH = os.path.join(main_dir, REGISTER_FILE_NAME)
+COURSE_FILE_PATH = os.path.join(main_dir, COURSE_FILE_NAME)
+
+# Report ให้ออกมาที่ main/
+REPORT_STUDENT_FILE_PATH = os.path.join(main_dir, "student_report.txt")
+REPORT_REGISTER_FILE_PATH = os.path.join(main_dir, "register_report.txt")
+
+# Student Format
+STUDENT_RECORD_FORMAT = '<16s50s50s20sBB'
 STUDENT_RECORD_SIZE = struct.calcsize(STUDENT_RECORD_FORMAT)
+
+# Register Format
+REGISTER_RECORD_FORMAT = '<I16s16sdB'
+REGISTER_RECORD_SIZE = struct.calcsize(REGISTER_RECORD_FORMAT)
+
+# Course Format
+COURSE_RECORD_FORMAT = '<10s50sB H B B'
+COURSE_RECORD_SIZE = struct.calcsize(COURSE_RECORD_FORMAT)
+
 STATUS_MAPPING = {1: 'Registered', 0: 'Dropped'}
 
+# -----------------------------
+# อ่าน student record
+# -----------------------------
 def read_student_record(record_data):
-    """อ่านบันทึกข้อมูลนักเรียนจากรูปแบบไบนารี"""
     try:
         unpacked_data = struct.unpack(STUDENT_RECORD_FORMAT, record_data)
         student_id = unpacked_data[0].strip(b'\x00').decode('utf-8')
@@ -25,200 +46,208 @@ def read_student_record(record_data):
         year_level = unpacked_data[4]
         status_code = unpacked_data[5]
 
-        # ใช้ค่าวันที่ที่กำหนดไว้ตายตัวแทน
-        registration_date = '2025-09-09'
-        
         return {
             'STUDENT ID': student_id,
             'FIRST NAME': first_name,
             'LAST NAME': last_name,
             'MAJOR': major,
             'YEAR': year_level,
-            'REGISTRATION DATE': registration_date,
             'STATUS': STATUS_MAPPING.get(status_code, 'Unknown')
         }
     except struct.error:
         return None
 
-def read_all_records_from_file(file_path=STUDENT_FILE_PATH):
-    """อ่านบันทึกข้อมูลทั้งหมดจากไฟล์ไบนารี"""
+def read_all_students(file_path=STUDENT_FILE_PATH):
     records = []
-    try:
-        if not os.path.exists(file_path):
-            print(f"❌ Error: ไม่พบไฟล์ '{file_path}'")
-            return records
-        with open(file_path, 'rb') as f:
-            while True:
-                record_data = f.read(STUDENT_RECORD_SIZE)
-                if not record_data:
-                    break
-                record = read_student_record(record_data)
-                if record:
-                    records.append(record)
-    except IOError as e:
-        print(f"❌ เกิดข้อผิดพลาดในการอ่านไฟล์: {e}")
+    if not os.path.exists(file_path):
+        return records
+    with open(file_path, 'rb') as f:
+        while True:
+            record_data = f.read(STUDENT_RECORD_SIZE)
+            if not record_data:
+                break
+            record = read_student_record(record_data)
+            if record:
+                records.append(record)
     return records
 
-def format_table(records, headers):
-    """สร้างตารางในรูปแบบข้อความจากรายการบันทึก"""
-    column_widths = {
-        'STUDENT ID': 15,
-        'FIRST NAME': 20,
-        'LAST NAME': 20,
-        'MAJOR': 15,
-        'YEAR': 5,
-        'REGISTRATION DATE': 18,
-        'STATUS': 12
-    }
-    
-    table_string = ""
-    
-    # ส่วนหัวตาราง
-    header_line = " | ".join(f"{h:<{column_widths[h]}}" for h in headers)
-    table_string += header_line + "\n"
-    table_string += "-" * len(header_line) + "\n"
-    
-    # ข้อมูลแต่ละแถว
-    for record in records:
-        row_data = [
-            record['STUDENT ID'],
-            record['FIRST NAME'],
-            record['LAST NAME'],
-            record['MAJOR'],
-            str(record['YEAR']),
-            record['REGISTRATION DATE'],
-            record['STATUS']
-        ]
-        row_line = " | ".join(f"{d:<{column_widths[h]}}" for d, h in zip(row_data, headers))
-        table_string += row_line + "\n"
-        
-    return table_string
-
-def print_report(records):
-    """สร้างและแสดงรายงานสรุปผลการลงทะเบียน"""
-    report_string = ""
-    report_string += "=========================================================================================\n"
-    report_string += "                               Student Registration Report\n"
-    report_string += "=========================================================================================\n"
-    
-    headers = ['STUDENT ID', 'FIRST NAME', 'LAST NAME', 'MAJOR', 'YEAR', 'REGISTRATION DATE', 'STATUS']
-    report_string += format_table(records, headers) + "\n"
-    report_string += "-----------------------------------------------------------------------------------------\n"
-    
-    total_students = len(records)
-    
-    # นับจำนวนนักเรียนตามสาขาวิชา สถานะ ปี และวันที่ลงทะเบียน
-    students_by_major = {}
-    status_counts = {}
-    year_counts = {}
-    date_counts = {}
-    
-    for record in records:
-        major = record['MAJOR']
-        status = record['STATUS']
-        year = record['YEAR']
-        reg_date = record['REGISTRATION DATE']
-        
-        students_by_major[major] = students_by_major.get(major, 0) + 1
-        status_counts[status] = status_counts.get(status, 0) + 1
-        year_counts[year] = year_counts.get(year, 0) + 1
-        date_counts[reg_date] = date_counts.get(reg_date, 0) + 1
-        
-    report_string += f"Total students in this section: {total_students}\n"
-    report_string += "Students by Major:\n"
-    for major, count in students_by_major.items():
-        report_string += f"  - {major}: {count}\n"
-    
-    report_string += "-----------------------------------------------------------------------------------------\n"
-    report_string += "**Summary of Status:**\n"
-    
-    registered_status = STATUS_MAPPING[1]
-    dropped_status = STATUS_MAPPING[0]
-    
-    registered_count = status_counts.get(registered_status, 0)
-    report_string += f"  - {registered_status}: {registered_count}\n"
-    
-    dropped_count = status_counts.get(dropped_status, 0)
-    report_string += f"  - {dropped_status}: {dropped_count}\n"
-
-    report_string += "-----------------------------------------------------------------------------------------\n"
-    report_string += "Summary:\n"
-    
-    if records:
-        # ฟังก์ชันช่วยหาค่าที่พบบ่อยที่สุดและน้อยที่สุด
-        def find_most_common(counts):
-            if not counts:
-                return None, 0
-            most_common = max(counts, key=counts.get)
-            return most_common, counts[most_common]
-
-        def find_least_common(counts):
-            if not counts:
-                if not counts:
-                    return None, 0
-            least_common = min(counts, key=counts.get)
-            return least_common, counts[least_common]
-
-        most_common_year, most_common_year_count = find_most_common(year_counts)
-        most_common_major, most_common_major_count = find_most_common(students_by_major)
-        least_common_major, least_common_major_count = find_least_common(students_by_major)
-        most_common_date, most_common_date_count = find_most_common(date_counts)
-
-        report_string += f"- ปีที่มีนักเรียนลงทะเบียนมากที่สุด: Year {most_common_year} ({most_common_year_count} students)\n"
-        report_string += f"- สาขาวิชาที่มีนักเรียนลงทะเบียนมากที่สุด: {most_common_major} ({most_common_major_count} students)\n"
-        report_string += f"- สาขาวิชาที่มีนักเรียนลงทะเบียนน้อยที่สุด: {least_common_major} ({least_common_major_count} students)\n"
-        report_string += f"- วันที่ลงทะเบียนมากที่สุด: {most_common_date} ({most_common_date_count} students)\n"
-    else:
-        report_string += "- No data to summarize.\n"
-        
-    report_string += "-----------------------------------------------------------------------------------------\n"
-
-    print(report_string)
-    
-    return report_string
-
-def write_report_to_text_file(report_string, file_path=REPORT_FILE_PATH):
-    """บันทึกรายงานลงในไฟล์ .txt"""
+# -----------------------------
+# อ่าน course record
+# -----------------------------
+def read_course_record(record_data):
     try:
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(report_string)
-        print(f"✅ บันทึกรายงานลงในไฟล์ '{file_path}' เรียบร้อยแล้ว!")
-    except IOError as e:
-        print(f"❌ เกิดข้อผิดพลาดในการบันทึกไฟล์: {e}")
+        unpacked_data = struct.unpack(COURSE_RECORD_FORMAT, record_data)
+        course_id = unpacked_data[0].strip(b'\x00').decode('utf-8')
+        course_name = unpacked_data[1].strip(b'\x00').decode('utf-8')
+        return {
+            'course_id': course_id,
+            'course_name': course_name,
+            'credit': unpacked_data[2],
+            'academic_year': unpacked_data[3],
+            'semester': unpacked_data[4],
+            'is_active': unpacked_data[5]
+        }
+    except struct.error:
+        return None
 
-def read_text_file(file_path=REPORT_FILE_PATH):
-    """อ่านและแสดงเนื้อหาจากไฟล์ .txt"""
-    print(f"\n--- เนื้อหาจากไฟล์ '{file_path}' ---")
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-            print(content)
-    except FileNotFoundError:
-        print(f"❌ ไม่พบไฟล์ '{file_path}'")
-    except Exception as e:
-        print(f"❌ เกิดข้อผิดพลาดในการอ่านไฟล์: {e}")
-
-# --- Main Program Execution ---
-def generate_report():
-    """แสดงเมนูหลักและรับตัวเลือกจากผู้ใช้"""
-    while True:
-            print("\n--- เมนูจัดการรายวิชา ---")
-            print("1. ดูข้อมูล REPORT ")
-            print("2. ย้อนกลับไปหน้าแรก")
-            choice = input("กรุณาเลือกเมนู: ")
-                
-            if choice == '1':
-                student_records = read_all_records_from_file()
-    
-                if student_records:
-                    report_content = print_report(student_records)
-                    write_report_to_text_file(report_content)
-                    read_text_file()
-                else:
-                    print("ไม่พบข้อมูลนักเรียนในไฟล์ หรือมีข้อผิดพลาดในการอ่านไฟล์")
-
-            elif choice == '2':
-                print("ย้อนกลับสู่เมนูหลัก...")
+def load_course_dict(file_path=COURSE_FILE_PATH):
+    courses = {}
+    if not os.path.exists(file_path):
+        return courses
+    with open(file_path, 'rb') as f:
+        while True:
+            record_data = f.read(COURSE_RECORD_SIZE)
+            if not record_data:
                 break
+            course = read_course_record(record_data)
+            if course:
+                courses[course['course_id']] = course['course_name']
+    return courses
+
+# -----------------------------
+# อ่าน register record
+# -----------------------------
+def read_register_record(record_data):
+    try:
+        unpacked_data = struct.unpack(REGISTER_RECORD_FORMAT, record_data)
+        reg_id = unpacked_data[0]
+        student_id = unpacked_data[1].strip(b'\x00').decode('utf-8')
+        course_id = unpacked_data[2].strip(b'\x00').decode('utf-8')
+        reg_date = datetime.datetime.fromtimestamp(unpacked_data[3])
+        status = unpacked_data[4]
+        return {
+            'REGISTER ID': reg_id,
+            'STUDENT ID': student_id,
+            'COURSE ID': course_id,
+            'DATE': reg_date.strftime("%Y-%m-%d %H:%M:%S"),
+            'STATUS': STATUS_MAPPING.get(status, 'Unknown')
+        }
+    except struct.error:
+        return None
+
+def read_all_registrations(file_path=REGISTER_FILE_PATH):
+    records = []
+    if not os.path.exists(file_path):
+        return records
+    with open(file_path, 'rb') as f:
+        while True:
+            record_data = f.read(REGISTER_RECORD_SIZE)
+            if not record_data:
+                break
+            record = read_register_record(record_data)
+            if record:
+                records.append(record)
+    return records
+
+# -----------------------------
+# Student Report
+# -----------------------------
+def print_student_report(records):
+    report = ""
+    report += "==========================================================================\n"
+    report += "                          Student Report\n"
+    report += "==========================================================================\n"
+
+    headers = ["STUDENT ID", "FIRST NAME", "LAST NAME", "MAJOR", "YEAR", "STATUS"]
+    col_widths = [15, 15, 15, 10, 5, 10]
+
+    header_line = " | ".join(f"{h:<{col_widths[i]}}" for i, h in enumerate(headers))
+    report += header_line + "\n"
+    report += "-" * len(header_line) + "\n"
+
+    for rec in records:
+        row_data = [str(rec[h]) for h in headers]
+        row_line = " | ".join(f"{row_data[i]:<{col_widths[i]}}" for i in range(len(headers)))
+        report += row_line + "\n"
+
+    report += "--------------------------------------------------------------------------\n"
+    report += f"Total Students: {len(records)}\n"
+
+    print(report)
+    return report
+
+# -----------------------------
+# Register Report + Course Name
+# -----------------------------
+def print_register_report(records, courses):
+    report = ""
+    report += "==========================================================================\n"
+    report += "                        Registration Report\n"
+    report += "==========================================================================\n"
+
+    headers = ["REGISTER ID", "STUDENT ID", "COURSE ID", "COURSE NAME", "DATE", "STATUS"]
+    col_widths = [12, 15, 10, 20, 20, 12]
+
+    header_line = " | ".join(f"{h:<{col_widths[i]}}" for i, h in enumerate(headers))
+    report += header_line + "\n"
+    report += "-" * len(header_line) + "\n"
+
+    for rec in records:
+        course_name = courses.get(rec['COURSE ID'], "N/A")
+        row_data = [
+            str(rec["REGISTER ID"]),
+            rec["STUDENT ID"],
+            rec["COURSE ID"],
+            course_name,
+            rec["DATE"],
+            rec["STATUS"]
+        ]
+        row_line = " | ".join(f"{row_data[i]:<{col_widths[i]}}" for i in range(len(headers)))
+        report += row_line + "\n"
+
+    report += "--------------------------------------------------------------------------\n"
+    report += f"Total Registrations: {len(records)}\n"
+
+    status_counts = {}
+    for rec in records:
+        status_counts[rec['STATUS']] = status_counts.get(rec['STATUS'], 0) + 1
+    for status, count in status_counts.items():
+        report += f"- {status}: {count}\n"
+
+    print(report)
+    return report
+
+# -----------------------------
+# Save Report
+# -----------------------------
+def write_report(report_string, filename):
+    try:
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(report_string)
+        print(f"✅ บันทึกรายงานลงไฟล์ {filename} เรียบร้อย")
+    except IOError as e:
+        print(f"❌ Error writing file: {e}")
+
+# -----------------------------
+# Main Menu
+# -----------------------------
+def generate_report():
+    while True:
+        print("\n--- เมนูรายงาน ---")
+        print("1. ดูรายงานนักเรียน")
+        print("2. ดูรายงานการลงทะเบียน")
+        print("3. ย้อนกลับไปหน้าแรก")
+
+        choice = input("เลือกเมนู: ")
+
+        if choice == '1':
+            students = read_all_students()
+            if students:
+                report = print_student_report(students)
+                write_report(report, REPORT_STUDENT_FILE_PATH)
             else:
-                print("ตัวเลือกไม่ถูกต้อง กรุณาลองอีกครั้ง")
+                print("ไม่พบนักเรียน")
+
+        elif choice == '2':
+            regs = read_all_registrations()
+            courses = load_course_dict()
+            if regs:
+                report = print_register_report(regs, courses)
+                write_report(report, REPORT_REGISTER_FILE_PATH)
+            else:
+                print("ไม่พบข้อมูลการลงทะเบียน")
+
+        elif choice == '3':
+            break
+        else:
+            print("ตัวเลือกไม่ถูกต้อง")

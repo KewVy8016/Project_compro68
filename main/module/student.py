@@ -111,14 +111,53 @@ def view_students():
     if not students:
         print("ไม่พบข้อมูลนักเรียนในระบบ")
         return
+    
+    # กำหนดความกว้างคอลัมน์ (ปรับให้เหมาะสมกับข้อมูล)
+    col_widths = [15, 25, 25, 20, 10, 12]  # ปรับให้รหัสนักเรียนกว้างพอ
+    headers = ["รหัสนักเรียน", "ชื่อจริง", "นามสกุล", "สาขา", "ชั้นปี", "สถานะ"]
+
+    # สร้างเส้นคั่น
+    separator = "+" + "+".join(["-" * (w + 2) for w in col_widths]) + "+"
+
+    # พิมพ์ตาราง
     print("\n--- รายการนักเรียนทั้งหมด ---")
-    print(f"{'รหัส':<16} | {'ชื่อจริง':<20} | {'นามสกุล':<20} | {'สาขา':<10} | {'ชั้นปี':<5} | {'สถานะ':<10}")
-    print("-" * 90)
+    print(separator)
+    
+    # พิมพ์ header
+    header_row = "|"
+    for i, header in enumerate(headers):
+        header_row += f" {header.center(col_widths[i])} |"
+    print(header_row)
+    print(separator)
+
+    # พิมพ์ข้อมูล
     for student in students:
         if student:
             status_text = "Active" if student['status'] == 1 else "Inactive"
-            print(f"{student['student_id']:<16} | {student['first_name']:<20} | {student['last_name']:<20} | {student['major']:<10} | {student['year_level']:<5} | {status_text:<10}")
-    print("-------------------------")
+            
+            # ตัดข้อความหากยาวเกิน
+            first_name = student['first_name']
+            if len(first_name) > col_widths[1]:
+                first_name = first_name[:col_widths[1]-3] + "..."
+                
+            last_name = student['last_name']
+            if len(last_name) > col_widths[2]:
+                last_name = last_name[:col_widths[2]-3] + "..."
+                
+            major = student['major']
+            if len(major) > col_widths[3]:
+                major = major[:col_widths[3]-3] + "..."
+            
+            row = "|"
+            row += f" {student['student_id'].ljust(col_widths[0])} |"
+            row += f" {first_name.ljust(col_widths[1])} |"
+            row += f" {last_name.ljust(col_widths[2])} |"
+            row += f" {major.ljust(col_widths[3])} |"
+            row += f" {str(student['year_level']).center(col_widths[4])} |"
+            row += f" {status_text.center(col_widths[5])} |"
+            print(row)
+            print(separator)
+    
 
 def update_student():
     """แก้ไขข้อมูลนักเรียน"""
