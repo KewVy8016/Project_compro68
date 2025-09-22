@@ -3,12 +3,86 @@
 ==========================================================================
 STUDENT ID           | FIRST NAME           | LAST NAME            | MAJOR           | YEAR     | STATUS         
 -----------------------------------------------------------------------------------------------------------------
-6806022510011        | Thuiwad              | ASd                  | INET            | 1        | ลงทะเบียน      
-6806022510015        | Chaised              | Sukying              | INE             | 1        | ถอน            
+STU796973            | Thanapon             | Suwannarat           | English         | 4        | ถอน            
+STU705257            | Supaporn             | Wongyai              | Computer Science | 1        | ลงทะเบียน      
+STU442194            | Nattapong            | Phromdee             | Biology         | 4        | ถอน            
+STU569818            | Kritsada             | Meechai              | Economics       | 2        | ถอน            
+STU942291            | Nareerat             | Khamphol             | Economics       | 2        | ถอน            
+STU778182            | Chatchai             | Wongyai              | Economics       | 2        | ถอน            
+STU837721            | Nattapong            | Saengsuwan           | Information Tech | 2        | ลงทะเบียน      
+STU510451            | Nattapong            | Wongyai              | Computer Science | 4        | ลงทะเบียน      
+STU911742            | Supaporn             | Saengsuwan           | Chemistry       | 4        | ลงทะเบียน      
+STU109544            | Waranya              | Khamphol             | Physics         | 3        | ถอน            
+STU471005            | Waranya              | Rattanakorn          | Information Tech | 1        | ถอน            
+STU355431            | Nattapong            | Chantaras            | Information Tech | 2        | ลงทะเบียน      
+STU779447            | Nareerat             | Khamphol             | Computer Science | 1        | ลงทะเบียน      
+STU669065            | Nareerat             | Saengsuwan           | Information Tech | 4        | ลงทะเบียน      
+STU804899            | Nareerat             | Chantaras            | Computer Science | 3        | ถอน            
+STU945148            | Supaporn             | Wongyai              | Business        | 1        | ลงทะเบียน      
+STU788477            | Kritsada             | Rattanakorn          | Physics         | 4        | ถอน            
+STU636498            | Kritsada             | Phromdee             | Business        | 2        | ลงทะเบียน      
+STU989829            | Thanapon             | Saengsuwan           | Chemistry       | 2        | ลงทะเบียน      
+STU761706            | Waranya              | Suwannarat           | Physics         | 4        | ลงทะเบียน      
+STU535097            | Kritsada             | Wongyai              | Engineering     | 4        | ลงทะเบียน      
+STU204097            | Kritsada             | Chantaras            | Physics         | 3        | ถอน            
+STU625594            | Pimchanok            | Chantaras            | Economics       | 4        | ถอน            
+STU482699            | Supaporn             | Phromdee             | Business        | 4        | ถอน            
+STU197090            | Pimchanok            | Rattanakorn          | English         | 1        | ลงทะเบียน      
+STU767621            | Pimchanok            | Meechai              | Engineering     | 2        | ถอน            
+STU771368            | Waranya              | Khamphol             | Physics         | 4        | ลงทะเบียน      
+STU468016            | Pimchanok            | Saengsuwan           | Economics       | 4        | ลงทะเบียน      
+STU546039            | Nattapong            | Saengsuwan           | English         | 1        | ลงทะเบียน      
+STU339972            | Chatchai             | Saengsuwan           | Economics       | 3        | ลงทะเบียน      
+STU971475            | Waranya              | Chantaras            | Computer Science | 1        | ถอน            
+STU337436            | Somchai              | Wongyai              | Business        | 2        | ถอน            
+STU840301            | Thanapon             | Phromdee             | English         | 2        | ลงทะเบียน      
+STU153914            | Supaporn             | Wongyai              | Biology         | 4        | ลงทะเบียน      
+STU625746            | Somchai              | Phromdee             | Mathematics     | 4        | ถอน            
+STU204521            | Nattapong            | Phromdee             | Information Tech | 3        | ถอน            
+STU472020            | Pimchanok            | Khamphol             | Computer Science | 3        | ลงทะเบียน      
+STU780745            | Kritsada             | Suwannarat           | Mathematics     | 3        | ถอน            
+STU265238            | Nattapong            | Saengsuwan           | Mathematics     | 4        | ถอน            
+STU155168            | Kritsada             | Meechai              | Economics       | 4        | ลงทะเบียน      
+STU892150            | Somchai              | Saengsuwan           | Mathematics     | 1        | ลงทะเบียน      
+STU402507            | Waranya              | Saengsuwan           | Computer Science | 2        | ลงทะเบียน      
+STU820212            | Waranya              | Srisuk               | Mathematics     | 3        | ถอน            
+STU162343            | Nattapong            | Meechai              | Economics       | 1        | ถอน            
+STU411021            | Nattapong            | Wongyai              | Economics       | 4        | ถอน            
+STU116871            | Pimchanok            | Meechai              | Computer Science | 1        | ลงทะเบียน      
+STU586679            | Pimchanok            | Srisuk               | Biology         | 3        | ลงทะเบียน      
+STU242278            | Nattapong            | Rattanakorn          | Physics         | 4        | ถอน            
+STU157653            | Thanapon             | Rattanakorn          | English         | 2        | ถอน            
+STU345896            | Waranya              | Srisuk               | Mathematics     | 1        | ถอน            
+STU637546            | Somchai              | Suwannarat           | Chemistry       | 2        | ลงทะเบียน      
+STU154528            | Nareerat             | Khamphol             | Biology         | 4        | ถอน            
+STU162787            | Nareerat             | Khamphol             | Chemistry       | 3        | ถอน            
+STU663268            | Anuwat               | Rattanakorn          | Computer Science | 1        | ลงทะเบียน      
+STU898946            | Anuwat               | Meechai              | Engineering     | 1        | ลงทะเบียน      
+STU453644            | Nareerat             | Meechai              | Computer Science | 1        | ถอน            
+STU818977            | Supaporn             | Khamphol             | Engineering     | 4        | ถอน            
+STU794109            | Anuwat               | Meechai              | Information Tech | 3        | ถอน            
+STU895593            | Nareerat             | Meechai              | Economics       | 2        | ถอน            
+STU709304            | Somchai              | Khamphol             | English         | 4        | ถอน            
 --------------------------------------------------------------------------
-จำนวนนักศึกษาทั้งหมด: 2
+จำนวนนักศึกษาทั้งหมด: 60
 
 --- สถิตินักศึกษา ---
-- นักศึกษาสาขา INET: 1 คน
-- นักศึกษาสาขา INE: 1 คน
-- ชั้นปีที่มีนักศึกษามากที่สุด: ปี 1 (2 คน)
+นักศึกษาแยกตามสาขา:
+  - สาขา English: 6 คน
+  - สาขา Computer Science: 10 คน
+  - สาขา Biology: 4 คน
+  - สาขา Economics: 10 คน
+  - สาขา Information Tech: 6 คน
+  - สาขา Chemistry: 4 คน
+  - สาขา Physics: 6 คน
+  - สาขา Business: 4 คน
+  - สาขา Engineering: 4 คน
+  - สาขา Mathematics: 6 คน
+
+นักศึกษาแยกตามชั้นปี:
+  - ปี 1: 14 คน
+  - ปี 2: 14 คน
+  - ปี 3: 11 คน
+  - ปี 4: 21 คน
+
+- ชั้นปีที่มีนักศึกษามากที่สุด: ปี 4 (21 คน)

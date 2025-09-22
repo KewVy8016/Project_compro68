@@ -176,12 +176,20 @@ def print_student_report(records):
     
     report += "\n--- สถิตินักศึกษา ---\n"
     
+    # สรุปตามสาขา
+    report += "นักศึกษาแยกตามสาขา:\n"
     for major, count in major_count.items():
-        report += f"- นักศึกษาสาขา {major}: {count} คน\n"
+        report += f"  - สาขา {major}: {count} คน\n"
     
+    # เพิ่ม: สรุปตามชั้นปี
+    report += "\nนักศึกษาแยกตามชั้นปี:\n"
+    for year in sorted(year_count.keys()):  # เรียงลำดับชั้นปีเพื่อความชัดเจน
+        report += f"  - ปี {year}: {year_count[year]} คน\n"
+    
+    # ชั้นปีที่มีนักศึกษามากที่สุด
     if year_count:
         max_year = max(year_count, key=year_count.get)
-        report += f"- ชั้นปีที่มีนักศึกษามากที่สุด: ปี {max_year} ({year_count[max_year]} คน)\n"
+        report += f"\n- ชั้นปีที่มีนักศึกษามากที่สุด: ปี {max_year} ({year_count[max_year]} คน)\n"
     
     print(report)
     return report
