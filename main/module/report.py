@@ -451,7 +451,7 @@ def write_report(report_string, filename):
 def generate_report():
     while True:
         print("\n--- เมนูรายงาน ---")
-        print("1. ดูรายงานนักศึกษา")
+        print("1. ดูรายงานนักเรียน")
         print("2. ดูรายงานการลงทะเบียน")
         print("3. ย้อนกลับไปหน้าแรก")
 
